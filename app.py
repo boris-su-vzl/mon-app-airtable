@@ -58,7 +58,7 @@ def logout():
     st.session_state.page = 'home'
     st.rerun()
 
-# --- DESIGN CUSTOM CSS (NAUTILUS V3 - CORRECTIONS CTA) ---
+# --- DESIGN CUSTOM CSS (NAUTILUS V4 - HARMONISATION CTA) ---
 def inject_modern_design():
     st.markdown("""
         <style>
@@ -97,38 +97,37 @@ def inject_modern_design():
             text-transform: uppercase;
             color: #00d9ff;
             text-shadow: 0 0 15px rgba(0, 217, 255, 0.4);
-            margin-bottom: 20px;
+            margin-bottom: 25px;
             text-align: center;
         }
 
-        /* --- CORRECTION DU BOUTON (CTA) --- */
-        /* Force la couleur bleu foncé et le texte cyan pour TOUS les boutons principaux */
-        div.stButton > button {
-            background-color: #001a33 !important; /* Bleu très foncé */
-            color: #00d9ff !important;           /* Texte Cyan */
-            border: 2px solid #00d9ff !important;
+        /* --- HARMONISATION DES BOUTONS (STYLE OUTLINE CYAN) --- */
+        div.stButton > button, div[data-testid="stForm"] button {
+            background-color: #001a33 !important; /* Fond sombre identique au bouton inscription */
+            color: #00d9ff !important;           /* Texte Cyan brillant */
+            border: 2px solid #00d9ff !important; /* Bordure Cyan */
             border-radius: 12px !important;
             font-weight: 600 !important;
             letter-spacing: 2px !important;
             text-transform: uppercase !important;
             padding: 0.75rem 2rem !important;
             width: 100% !important;
-            opacity: 1 !important;
+            transition: all 0.3s ease !important;
         }
         
-        div.stButton > button:hover {
-            background-color: #003366 !important;
-            box-shadow: 0 0 25px rgba(0, 217, 255, 0.5) !important;
+        div.stButton > button:hover, div[data-testid="stForm"] button:hover {
+            background-color: rgba(0, 217, 255, 0.1) !important;
+            box-shadow: 0 0 20px rgba(0, 217, 255, 0.6) !important;
             border-color: #ffffff !important;
             color: #ffffff !important;
         }
 
         /* --- CHAMPS DE SAISIE --- */
         .stTextInput input {
-            background-color: #ffffff !important; /* Fond Blanc pur */
+            background-color: #ffffff !important; 
             border: 1px solid #00d9ff !important;
             border-radius: 10px !important;
-            color: #000000 !important;           /* TEXTE NOIR */
+            color: #000000 !important;           
             font-weight: 500 !important;
             padding: 12px !important;
         }
@@ -164,6 +163,7 @@ def show_login():
     with st.form("login"):
         st.text_input("EMAIL", key="login_email")
         st.text_input("MOT DE PASSE", type="password", key="login_pw")
+        # Le bouton "S'IMMERGER" aura maintenant le même style que "CRÉER UN NOUVEAU PROFIL"
         if st.form_submit_button("S'IMMERGER"):
             u = fetch_user_by_email(st.session_state.login_email)
             if u and verify_password(st.session_state.login_pw, u['fields'].get('MotDePasse', '')):
@@ -213,6 +213,7 @@ def show_profile_settings():
         nom = col2.text_input("Nom", value=f.get("Nom", ""))
         tel = st.text_input("Contact Téléphonique", value=f.get("Telephone", ""))
         
+        # Ce bouton est aussi mis à jour
         if st.form_submit_button("METTRE À JOUR LES DONNÉES"):
             up = update_user_profile(u['id'], nom, prenom, tel)
             if up:
