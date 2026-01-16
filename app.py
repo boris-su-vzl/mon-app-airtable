@@ -37,19 +37,21 @@ HEADERS = {
 # --- Services IA (Gemini) ---
 
 def get_name_compliment(prenom):
-    """Génère un compliment sur le prénom via Gemini."""
     if not GOOGLE_API_KEY:
+        st.error("Clé API Google manquante dans les secrets !")
         return ""
     
     try:
         client = genai.Client(api_key=GOOGLE_API_KEY)
+        # On utilise le nom de modèle le plus stable actuellement
         response = client.models.generate_content(
-            model="gemini-1.5-flash",
-            contents=f"Tu es un expert en étymologie jovial. Donne un avis court (une seule phrase maximum), élégant et flatteur sur le prénom '{prenom}'. Mentionne pourquoi il est joli ou intéressant (sonorité, origine, signification). Ne mets pas de guillemets."
+            model="gemini-1.5-flash", 
+            contents=f"Donne un avis court et flatteur sur le prénom '{prenom}'. Une seule phrase."
         )
         return response.text
     except Exception as e:
-        print(f"Erreur IA : {e}")
+        # Ceci va nous dire EXACTEMENT pourquoi ça ne marche pas (ex: Quota, Clé invalide...)
+        st.error(f"Détail de l'erreur IA : {e}")
         return ""
 
 # --- Services Airtable & Sécurité ---
