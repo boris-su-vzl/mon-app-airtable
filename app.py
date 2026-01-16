@@ -17,7 +17,6 @@ try:
     AIRTABLE_TOKEN = st.secrets["AIRTABLE_TOKEN"]
     AIRTABLE_BASE_ID = st.secrets["AIRTABLE_BASE_ID"]
     AIRTABLE_TABLE_NAME = st.secrets.get("AIRTABLE_TABLE_NAME", "Utilisateurs")
-    SLACK_WEBHOOK_URL = st.secrets.get("SLACK_WEBHOOK_URL")
     GOOGLE_API_KEY = st.secrets.get("GOOGLE_API_KEY")
 except Exception as e:
     st.error(f"Configuration manquante : {e}")
@@ -59,7 +58,7 @@ def logout():
     st.session_state.page = 'home'
     st.rerun()
 
-# --- DESIGN CUSTOM CSS (NAUTILUS V2) ---
+# --- DESIGN CUSTOM CSS (NAUTILUS V3 - CORRECTIONS CTA) ---
 def inject_modern_design():
     st.markdown("""
         <style>
@@ -93,7 +92,7 @@ def inject_modern_design():
         /* Titres Lumineux */
         .welcome-title {
             font-size: 34px;
-            font-weight: 400;
+            font-weight: 600;
             letter-spacing: 6px;
             text-transform: uppercase;
             color: #00d9ff;
@@ -102,44 +101,46 @@ def inject_modern_design():
             text-align: center;
         }
 
-        /* BOUTON CTA (S'IMMERGER) - Bleu Foncé */
-        div.stButton > button[kind="primary"], 
-        div.stForm submit_button > button,
-        .stButton button {
-            background-color: #002b4d !important; /* Bleu foncé */
-            color: #00d9ff !important; /* Texte Cyan */
-            border: 1px solid #00d9ff !important;
-            border-radius: 12px;
-            font-weight: 600;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            padding: 0.7rem 2rem;
-            width: 100%;
-            transition: all 0.3s ease;
+        /* --- CORRECTION DU BOUTON (CTA) --- */
+        /* Force la couleur bleu foncé et le texte cyan pour TOUS les boutons principaux */
+        div.stButton > button {
+            background-color: #001a33 !important; /* Bleu très foncé */
+            color: #00d9ff !important;           /* Texte Cyan */
+            border: 2px solid #00d9ff !important;
+            border-radius: 12px !important;
+            font-weight: 600 !important;
+            letter-spacing: 2px !important;
+            text-transform: uppercase !important;
+            padding: 0.75rem 2rem !important;
+            width: 100% !important;
+            opacity: 1 !important;
         }
         
         div.stButton > button:hover {
-            background-color: #004073 !important;
-            box-shadow: 0 0 20px rgba(0, 217, 255, 0.4);
-            transform: translateY(-2px);
+            background-color: #003366 !important;
+            box-shadow: 0 0 25px rgba(0, 217, 255, 0.5) !important;
+            border-color: #ffffff !important;
+            color: #ffffff !important;
         }
 
-        /* CHAMPS DE SAISIE - Texte Noir */
+        /* --- CHAMPS DE SAISIE --- */
         .stTextInput input {
-            background-color: #f0f4f8 !important; /* Fond gris très clair / blanc cassé */
-            border: 1px solid rgba(0, 217, 255, 0.5) !important;
+            background-color: #ffffff !important; /* Fond Blanc pur */
+            border: 1px solid #00d9ff !important;
             border-radius: 10px !important;
-            color: #000000 !important; /* TEXTE NOIR */
-            font-weight: 500;
+            color: #000000 !important;           /* TEXTE NOIR */
+            font-weight: 500 !important;
+            padding: 12px !important;
         }
 
-        /* Labels des formulaires */
+        /* Labels */
         label {
             color: #00d9ff !important;
             font-weight: 400 !important;
             letter-spacing: 1px;
             text-transform: uppercase;
-            font-size: 0.8rem !important;
+            font-size: 0.85rem !important;
+            margin-bottom: 8px !important;
         }
 
         /* Boîte IA */
@@ -161,12 +162,11 @@ def show_login():
     st.markdown("<div style='text-align: center; margin-bottom: 5px;'><p style='color: #00d9ff; letter-spacing: 8px; font-weight: 200; font-size: 0.7rem;'>STRIDE-UP</p></div>", unsafe_allow_html=True)
     st.markdown("<h1 class='welcome-title'>NAUTILUS</h1>", unsafe_allow_html=True)
     with st.form("login"):
-        e = st.text_input("EMAIL")
-        p = st.text_input("MOT DE PASSE", type="password")
-        # Le bouton est maintenant bleu foncé avec texte cyan
+        st.text_input("EMAIL", key="login_email")
+        st.text_input("MOT DE PASSE", type="password", key="login_pw")
         if st.form_submit_button("S'IMMERGER"):
-            u = fetch_user_by_email(e)
-            if u and verify_password(p, u['fields'].get('MotDePasse', '')):
+            u = fetch_user_by_email(st.session_state.login_email)
+            if u and verify_password(st.session_state.login_pw, u['fields'].get('MotDePasse', '')):
                 st.session_state.user = u
                 st.rerun()
             else: st.error("Coordonnées d'accès invalides")
@@ -178,7 +178,6 @@ def show_login():
 
 def show_welcome():
     fields = st.session_state.user['fields']
-    
     c1, c2 = st.columns([8, 1])
     with c2:
         if st.button("⚙️", help="Système", key="gear"):
@@ -225,7 +224,6 @@ def show_profile_settings():
     st.markdown("<br>", unsafe_allow_html=True)
     if st.button("TERMINER LA SESSION"): logout()
 
-# --- Main Logic ---
 def main():
     inject_modern_design()
     if not st.session_state.user:
