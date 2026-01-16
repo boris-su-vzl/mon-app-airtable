@@ -41,25 +41,25 @@ def get_name_compliment(prenom):
         return "Clé API manquante."
     
     try:
-        # 1. On configure avec la clé
         genai.configure(api_key=GOOGLE_API_KEY)
         
-        # 2. SOLUTION : On force l'utilisation de la version 'v1' (stable) 
-        # au lieu de laisser le SDK choisir 'v1beta'
-        model = genai.GenerativeModel(
-            model_name='gemini-1.5-flash',
-            # Cette ligne est cruciale pour éviter l'erreur 404
-        )
+        # On teste avec le nom technique exact et stable
+        # Si 'gemini-1.5-flash' échoue, on essaie 'models/gemini-1.5-flash'
+        model = genai.GenerativeModel('models/gemini-1.5-flash')
         
         response = model.generate_content(
-            f"Donne un avis très court et flatteur sur le prénom '{prenom}'. Une seule phrase sans guillemets."
+            f"Donne un avis très court et flatteur sur le prénom '{prenom}'. Une seule phrase."
         )
-        
         return response.text.strip()
-        
     except Exception as e:
-        # On garde l'affichage de l'erreur au cas où
-        return f"Erreur technique : {e}"
+        # Si l'erreur 404 persiste, on va essayer le modèle 'gemini-pro' 
+        # qui est le nom universel de repli
+        try:
+            model = genai.GenerativeModel('gemini-pro')
+            response = model.generate_content(f"Dit du bien du prénom {prenom}")
+            return response.text.strip()
+        except:
+            return f"Erreur technique persistante : {e}"
     
         
 
