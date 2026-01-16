@@ -6,8 +6,8 @@ import google.generativeai as genai
 
 # --- Configuration ---
 st.set_page_config(
-    page_title="Espace Membre",
-    page_icon="✨",
+    page_title="Nautilus - Espace Membre",
+    page_icon="🌊",
     layout="centered",
     initial_sidebar_state="collapsed"
 )
@@ -28,10 +28,10 @@ HEADERS = {"Authorization": f"Bearer {AIRTABLE_TOKEN}", "Content-Type": "applica
 
 # --- Services IA & Airtable ---
 def get_name_compliment(prenom):
-    if not GOOGLE_API_KEY: return "Un prénom magnifique."
+    if not GOOGLE_API_KEY: return "Un esprit vif dans les profondeurs."
     try:
         genai.configure(api_key=GOOGLE_API_KEY)
-        model = genai.GenerativeModel('models/gemini-2.5-flash')
+        model = genai.GenerativeModel('gemini-1.5-flash')
         response = model.generate_content(f"Donne un avis court, flatteur et moderne sur le prénom '{prenom}'. Une phrase.")
         return response.text.strip()
     except: return "Une personnalité rayonnante !"
@@ -59,75 +59,93 @@ def logout():
     st.session_state.page = 'home'
     st.rerun()
 
-# --- DESIGN CUSTOM CSS (FLAT & MODERN) ---
+# --- DESIGN CUSTOM CSS (NAUTILUS DARK MODE) ---
 def inject_modern_design():
     st.markdown("""
         <style>
-        /* Import Google Font */
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@200;400;600&display=swap');
         
-        html, body, [class*="css"] {
-            font-family: 'Inter', sans-serif;
-            color: #1e293b;
-        }
-
+        /* Fond Abysse */
         .stApp {
-            background-color: #fcfcfd;
+            background: radial-gradient(circle at 50% 20%, #003a61 0%, #001220 100%);
+            background-attachment: fixed;
+            color: #e0f2fe;
         }
 
-        /* Masquer le menu Streamlit */
+        html, body, [class*="css"] {
+            font-family: 'Montserrat', sans-serif;
+        }
+
         #MainMenu {visibility: hidden;}
         header {visibility: hidden;}
+        footer {visibility: hidden;}
 
-        /* Cartes Flat */
+        /* Conteneurs Translucides */
         div[data-testid="stForm"], .welcome-card {
-            background-color: #ffffff;
-            border: 1px solid #f1f5f9;
-            border-radius: 16px;
+            background-color: rgba(0, 30, 60, 0.4);
+            border: 1px solid rgba(0, 217, 255, 0.2);
+            border-radius: 24px;
             padding: 40px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            backdrop-filter: blur(15px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
         }
 
-        /* Boutons Modernes */
-        div.stButton > button {
-            border-radius: 8px;
-            font-weight: 600;
-            padding: 0.6rem 1.2rem;
-            border: none;
-            transition: all 0.2s ease;
-        }
-        
-        div.stButton > button[kind="primary"] {
-            background-color: #4f46e5;
-            color: white;
-        }
-        
-        div.stButton > button[kind="primary"]:hover {
-            background-color: #4338ca;
-            transform: translateY(-1px);
-        }
-
-        /* Inputs Flat */
-        .stTextInput input {
-            background-color: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-        }
-
-        /* Message d'accueil */
+        /* Titres Lumineux */
         .welcome-title {
-            font-size: 32px;
-            font-weight: 600;
-            letter-spacing: -0.5px;
-            color: #0f172a;
+            font-size: 34px;
+            font-weight: 200;
+            letter-spacing: 6px;
+            text-transform: uppercase;
+            color: #00d9ff;
+            text-shadow: 0 0 15px rgba(0, 217, 255, 0.4);
+            margin-bottom: 20px;
+        }
+
+        /* Boutons Style Contour */
+        div.stButton > button {
+            border-radius: 50px;
+            font-weight: 400;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            border: 1px solid #00d9ff !important;
+            background-color: transparent !important;
+            color: #00d9ff !important;
+            padding: 0.5rem 2rem;
+            transition: all 0.3s ease;
         }
         
+        div.stButton > button:hover {
+            background-color: rgba(0, 217, 255, 0.1) !important;
+            box-shadow: 0 0 20px rgba(0, 217, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        /* Champs de saisie */
+        .stTextInput input {
+            background-color: rgba(255, 255, 255, 0.05) !important;
+            border: 1px solid rgba(0, 217, 255, 0.2) !important;
+            border-radius: 12px !important;
+            color: white !important;
+        }
+
+        /* Labels des formulaires */
+        label {
+            color: rgba(0, 217, 255, 0.8) !important;
+            font-weight: 200 !important;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        /* Boîte IA */
         .ai-box {
-            background-color: #eff6ff;
-            border-left: 4px solid #3b82f6;
-            padding: 15px;
-            border-radius: 8px;
+            background-color: rgba(0, 217, 255, 0.05);
+            border-left: 3px solid #00d9ff;
+            padding: 20px;
+            border-radius: 10px;
             font-style: italic;
+            color: #94e2ff;
+            margin-top: 20px;
         }
         </style>
     """, unsafe_allow_html=True)
@@ -135,37 +153,40 @@ def inject_modern_design():
 # --- Interfaces ---
 
 def show_login():
-    st.markdown("<div style='text-align: center; margin-bottom: 2rem;'><h1 class='welcome-title'>Connexion</h1></div>", unsafe_allow_html=True)
+    st.markdown("<div style='text-align: center; margin-bottom: 10px;'><p style='color: #00d9ff; letter-spacing: 8px; font-weight: 200;'>STRIDE-UP</p></div>", unsafe_allow_html=True)
+    st.markdown("<h1 class='welcome-title'>NAUTILUS</h1>", unsafe_allow_html=True)
     with st.form("login"):
         e = st.text_input("Email")
         p = st.text_input("Mot de passe", type="password")
-        if st.form_submit_button("Se connecter", type="primary", use_container_width=True):
+        if st.form_submit_button("S'immerger", use_container_width=True):
             u = fetch_user_by_email(e)
             if u and verify_password(p, u['fields'].get('MotDePasse', '')):
                 st.session_state.user = u
                 st.rerun()
-            else: st.error("Identifiants incorrects")
-    if st.button("Pas encore de compte ? S'inscrire"):
+            else: st.error("Coordonnées d'accès invalides")
+    
+    st.markdown("<br>", unsafe_allow_html=True)
+    if st.button("Créer un nouveau profil"):
         st.session_state.auth_mode = 'register'
         st.rerun()
 
 def show_welcome():
     fields = st.session_state.user['fields']
     
-    # Navigation minimaliste
     c1, c2 = st.columns([8, 1])
     with c2:
-        if st.button("⚙️", help="Paramètres", key="gear"):
+        if st.button("⚙️", help="Système", key="gear"):
             st.session_state.page = 'settings'
             st.rerun()
 
     st.markdown(f"""
         <div class="welcome-card">
-            <p style='color: #6366f1; font-weight: 600; margin-bottom: 0;'>TABLEAU DE BORD</p>
-            <h1 class='welcome-title'>Bonjour, {fields.get('Prenom')}</h1>
-            <p style='color: #64748b;'>Heureux de vous revoir parmi nous.</p>
+            <p style='color: #00d9ff; font-weight: 400; letter-spacing: 3px; margin-bottom: 0;'>TABLEAU DE BORD</p>
+            <h1 class='welcome-title' style='text-align: left; margin-top: 10px;'>Bonjour, {fields.get('Prenom')}</h1>
+            <p style='color: #94a3b8;'>Systèmes opérationnels. Bienvenue à bord.</p>
             <div class='ai-box'>
-                ✨ {get_name_compliment(fields.get('Prenom'))}
+                <span style='color: #00d9ff; font-weight: 600;'>ANALYSE IA :</span><br>
+                "{get_name_compliment(fields.get('Prenom'))}"
             </div>
         </div>
     """, unsafe_allow_html=True)
@@ -175,7 +196,7 @@ def show_profile_settings():
     f = u['fields']
     
     c1, c2 = st.columns([8, 1])
-    with c1: st.markdown("<h1 class='welcome-title'>Paramètres</h1>", unsafe_allow_html=True)
+    with c1: st.markdown("<h1 class='welcome-title' style='text-align: left;'>PARAMÈTRES</h1>", unsafe_allow_html=True)
     with c2: 
         if st.button("🏠", key="home_back"):
             st.session_state.page = 'home'
@@ -185,27 +206,31 @@ def show_profile_settings():
         col1, col2 = st.columns(2)
         prenom = col1.text_input("Prénom", value=f.get("Prenom", ""))
         nom = col2.text_input("Nom", value=f.get("Nom", ""))
-        tel = st.text_input("Téléphone", value=f.get("Telephone", ""))
+        tel = st.text_input("Contact Téléphonique", value=f.get("Telephone", ""))
         
-        if st.form_submit_button("Enregistrer", type="primary", use_container_width=True):
+        if st.form_submit_button("Mettre à jour les données", use_container_width=True):
             up = update_user_profile(u['id'], nom, prenom, tel)
             if up:
                 st.session_state.user['fields'].update(up['fields'])
-                st.toast("Profil mis à jour", icon="✅")
+                st.toast("Base de données mise à jour", icon="🛰️")
                 time.sleep(1)
                 st.rerun()
     
     st.markdown("<br>", unsafe_allow_html=True)
-    if st.button("Se déconnecter", use_container_width=True): logout()
+    if st.button("Terminer la session", use_container_width=True): logout()
 
 # --- Main Logic ---
 def main():
     inject_modern_design()
     if not st.session_state.user:
-        _, center, _ = st.columns([1, 4, 1])
+        _, center, _ = st.columns([1, 6, 1])
         with center:
             if st.session_state.auth_mode == 'login': show_login()
-            else: st.info("Page d'inscription simplifiée...") # À compléter selon besoin
+            else: 
+                st.info("Module d'inscription en cours de déploiement...")
+                if st.button("Retour à la connexion"):
+                    st.session_state.auth_mode = 'login'
+                    st.rerun()
     else:
         if st.session_state.page == 'home': show_welcome()
         else: show_profile_settings()
