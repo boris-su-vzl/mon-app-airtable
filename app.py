@@ -37,9 +37,22 @@ HEADERS = {
 # --- Services IA (Gemini) ---
 
 def get_name_compliment(prenom):
-    genai.configure(api_key=GOOGLE_API_KEY)
-    models = [m.name for m in genai.list_models()]
-    return f"Modèles dispos : {models}"
+    if not GOOGLE_API_KEY:
+        return "Clé API manquante."
+    
+    try:
+        genai.configure(api_key=GOOGLE_API_KEY)
+        
+        # On utilise le modèle ultra-récent détecté dans ta liste
+        model = genai.GenerativeModel('models/gemini-2.5-flash')
+        
+        response = model.generate_content(
+            f"Tu es un expert en étymologie jovial. Donne un avis court (une seule phrase), élégant et flatteur sur le prénom '{prenom}'. Pas de guillemets."
+        )
+        return response.text.strip()
+    except Exception as e:
+        # En cas d'erreur, on affiche le détail pour débugger
+        return f"Erreur avec Gemini 2.5 : {e}"
     
         
 
