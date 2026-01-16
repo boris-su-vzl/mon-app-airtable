@@ -59,7 +59,7 @@ def logout():
     st.session_state.page = 'home'
     st.rerun()
 
-# --- DESIGN CUSTOM CSS (NAUTILUS DARK MODE) ---
+# --- DESIGN CUSTOM CSS (NAUTILUS V2) ---
 def inject_modern_design():
     st.markdown("""
         <style>
@@ -93,48 +93,53 @@ def inject_modern_design():
         /* Titres Lumineux */
         .welcome-title {
             font-size: 34px;
-            font-weight: 200;
+            font-weight: 400;
             letter-spacing: 6px;
             text-transform: uppercase;
             color: #00d9ff;
             text-shadow: 0 0 15px rgba(0, 217, 255, 0.4);
             margin-bottom: 20px;
+            text-align: center;
         }
 
-        /* Boutons Style Contour */
-        div.stButton > button {
-            border-radius: 50px;
-            font-weight: 400;
+        /* BOUTON CTA (S'IMMERGER) - Bleu Foncé */
+        div.stButton > button[kind="primary"], 
+        div.stForm submit_button > button,
+        .stButton button {
+            background-color: #002b4d !important; /* Bleu foncé */
+            color: #00d9ff !important; /* Texte Cyan */
+            border: 1px solid #00d9ff !important;
+            border-radius: 12px;
+            font-weight: 600;
             letter-spacing: 2px;
             text-transform: uppercase;
-            font-size: 0.8rem;
-            border: 1px solid #00d9ff !important;
-            background-color: transparent !important;
-            color: #00d9ff !important;
-            padding: 0.5rem 2rem;
+            padding: 0.7rem 2rem;
+            width: 100%;
             transition: all 0.3s ease;
         }
         
         div.stButton > button:hover {
-            background-color: rgba(0, 217, 255, 0.1) !important;
-            box-shadow: 0 0 20px rgba(0, 217, 255, 0.3);
+            background-color: #004073 !important;
+            box-shadow: 0 0 20px rgba(0, 217, 255, 0.4);
             transform: translateY(-2px);
         }
 
-        /* Champs de saisie */
+        /* CHAMPS DE SAISIE - Texte Noir */
         .stTextInput input {
-            background-color: rgba(255, 255, 255, 0.05) !important;
-            border: 1px solid rgba(0, 217, 255, 0.2) !important;
-            border-radius: 12px !important;
-            color: white !important;
+            background-color: #f0f4f8 !important; /* Fond gris très clair / blanc cassé */
+            border: 1px solid rgba(0, 217, 255, 0.5) !important;
+            border-radius: 10px !important;
+            color: #000000 !important; /* TEXTE NOIR */
+            font-weight: 500;
         }
 
         /* Labels des formulaires */
         label {
-            color: rgba(0, 217, 255, 0.8) !important;
-            font-weight: 200 !important;
+            color: #00d9ff !important;
+            font-weight: 400 !important;
             letter-spacing: 1px;
             text-transform: uppercase;
+            font-size: 0.8rem !important;
         }
 
         /* Boîte IA */
@@ -153,12 +158,13 @@ def inject_modern_design():
 # --- Interfaces ---
 
 def show_login():
-    st.markdown("<div style='text-align: center; margin-bottom: 10px;'><p style='color: #00d9ff; letter-spacing: 8px; font-weight: 200;'>STRIDE-UP</p></div>", unsafe_allow_html=True)
+    st.markdown("<div style='text-align: center; margin-bottom: 5px;'><p style='color: #00d9ff; letter-spacing: 8px; font-weight: 200; font-size: 0.7rem;'>STRIDE-UP</p></div>", unsafe_allow_html=True)
     st.markdown("<h1 class='welcome-title'>NAUTILUS</h1>", unsafe_allow_html=True)
     with st.form("login"):
-        e = st.text_input("Email")
-        p = st.text_input("Mot de passe", type="password")
-        if st.form_submit_button("S'immerger", use_container_width=True):
+        e = st.text_input("EMAIL")
+        p = st.text_input("MOT DE PASSE", type="password")
+        # Le bouton est maintenant bleu foncé avec texte cyan
+        if st.form_submit_button("S'IMMERGER"):
             u = fetch_user_by_email(e)
             if u and verify_password(p, u['fields'].get('MotDePasse', '')):
                 st.session_state.user = u
@@ -166,7 +172,7 @@ def show_login():
             else: st.error("Coordonnées d'accès invalides")
     
     st.markdown("<br>", unsafe_allow_html=True)
-    if st.button("Créer un nouveau profil"):
+    if st.button("CRÉER UN NOUVEAU PROFIL"):
         st.session_state.auth_mode = 'register'
         st.rerun()
 
@@ -208,7 +214,7 @@ def show_profile_settings():
         nom = col2.text_input("Nom", value=f.get("Nom", ""))
         tel = st.text_input("Contact Téléphonique", value=f.get("Telephone", ""))
         
-        if st.form_submit_button("Mettre à jour les données", use_container_width=True):
+        if st.form_submit_button("METTRE À JOUR LES DONNÉES"):
             up = update_user_profile(u['id'], nom, prenom, tel)
             if up:
                 st.session_state.user['fields'].update(up['fields'])
@@ -217,7 +223,7 @@ def show_profile_settings():
                 st.rerun()
     
     st.markdown("<br>", unsafe_allow_html=True)
-    if st.button("Terminer la session", use_container_width=True): logout()
+    if st.button("TERMINER LA SESSION"): logout()
 
 # --- Main Logic ---
 def main():
@@ -228,7 +234,7 @@ def main():
             if st.session_state.auth_mode == 'login': show_login()
             else: 
                 st.info("Module d'inscription en cours de déploiement...")
-                if st.button("Retour à la connexion"):
+                if st.button("RETOUR À LA CONNEXION"):
                     st.session_state.auth_mode = 'login'
                     st.rerun()
     else:
