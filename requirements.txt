@@ -1,4 +1,4 @@
 streamlit
 requests
 bcrypt
-google-genai
+google-generativeai
