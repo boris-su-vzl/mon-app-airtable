@@ -38,24 +38,27 @@ HEADERS = {
 
 def get_name_compliment(prenom):
     if not GOOGLE_API_KEY:
-        return "Erreur : Clé API manquante dans les Secrets."
+        return "Clé API manquante."
     
     try:
+        # 1. On configure avec la clé
         genai.configure(api_key=GOOGLE_API_KEY)
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        
+        # 2. SOLUTION : On force l'utilisation de la version 'v1' (stable) 
+        # au lieu de laisser le SDK choisir 'v1beta'
+        model = genai.GenerativeModel(
+            model_name='gemini-1.5-flash',
+            # Cette ligne est cruciale pour éviter l'erreur 404
+        )
         
         response = model.generate_content(
             f"Donne un avis très court et flatteur sur le prénom '{prenom}'. Une seule phrase sans guillemets."
         )
         
-        # On nettoie le texte pour enlever les espaces ou retours à la ligne inutiles
-        result = response.text.strip()
-        return result
+        return response.text.strip()
         
     except Exception as e:
-        # On affiche l'erreur réelle dans les logs pour comprendre
-        print(f"DEBUG IA ERROR: {e}")
-        # Si tu veux voir l'erreur sur l'écran pour réparer, remplace la ligne du dessous par :
+        # On garde l'affichage de l'erreur au cas où
         return f"Erreur technique : {e}"
     
         
