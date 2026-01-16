@@ -55,7 +55,9 @@ def get_name_compliment(prenom):
     except Exception as e:
         # On affiche l'erreur réelle dans les logs pour comprendre
         print(f"DEBUG IA ERROR: {e}")
-        return f"Erreur technique : {e})
+        # Si tu veux voir l'erreur sur l'écran pour réparer, remplace la ligne du dessous par :
+        return f"Erreur technique : {e}"
+    
         
 
 # --- Services Airtable & Sécurité ---
