@@ -17,6 +17,7 @@ try:
     AIRTABLE_TOKEN = st.secrets["AIRTABLE_TOKEN"]
     AIRTABLE_BASE_ID = st.secrets["AIRTABLE_BASE_ID"]
     AIRTABLE_TABLE_NAME = st.secrets.get("AIRTABLE_TABLE_NAME", "Utilisateurs")
+    SLACK_WEBHOOK_URL = st.secrets.get("SLACK_WEBHOOK_URL")  # Réintégré ici
     GOOGLE_API_KEY = st.secrets.get("GOOGLE_API_KEY")
 except Exception as e:
     st.error(f"Configuration manquante : {e}")
@@ -25,7 +26,15 @@ except Exception as e:
 BASE_URL = f"https://api.airtable.com/v0/{AIRTABLE_BASE_ID}/{AIRTABLE_TABLE_NAME}"
 HEADERS = {"Authorization": f"Bearer {AIRTABLE_TOKEN}", "Content-Type": "application/json"}
 
-# --- Services IA & Airtable ---
+# --- Services IA, Airtable & Slack ---
+def send_slack_message(message):
+    """Envoie une notification sur Slack si l'URL du Webhook est configurée."""
+    if SLACK_WEBHOOK_URL:
+        try:
+            requests.post(SLACK_WEBHOOK_URL, json={"text": message})
+        except Exception as e:
+            print(f"Erreur Slack : {e}")
+
 def get_name_compliment(prenom):
     if not GOOGLE_API_KEY: return "Un esprit vif dans les profondeurs."
     try:
@@ -58,13 +67,12 @@ def logout():
     st.session_state.page = 'home'
     st.rerun()
 
-# --- DESIGN CUSTOM CSS (NAUTILUS V4 - HARMONISATION CTA) ---
+# --- DESIGN CUSTOM CSS (NAUTILUS V5 - AVEC SLACK) ---
 def inject_modern_design():
     st.markdown("""
         <style>
         @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@200;400;600&display=swap');
         
-        /* Fond Abysse */
         .stApp {
             background: radial-gradient(circle at 50% 20%, #003a61 0%, #001220 100%);
             background-attachment: fixed;
@@ -79,7 +87,6 @@ def inject_modern_design():
         header {visibility: hidden;}
         footer {visibility: hidden;}
 
-        /* Conteneurs Translucides */
         div[data-testid="stForm"], .welcome-card {
             background-color: rgba(0, 30, 60, 0.4);
             border: 1px solid rgba(0, 217, 255, 0.2);
@@ -89,7 +96,6 @@ def inject_modern_design():
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
         }
 
-        /* Titres Lumineux */
         .welcome-title {
             font-size: 34px;
             font-weight: 600;
@@ -101,11 +107,11 @@ def inject_modern_design():
             text-align: center;
         }
 
-        /* --- HARMONISATION DES BOUTONS (STYLE OUTLINE CYAN) --- */
+        /* BOUTONS STYLE OUTLINE CYAN (Harmonisés) */
         div.stButton > button, div[data-testid="stForm"] button {
-            background-color: #001a33 !important; /* Fond sombre identique au bouton inscription */
-            color: #00d9ff !important;           /* Texte Cyan brillant */
-            border: 2px solid #00d9ff !important; /* Bordure Cyan */
+            background-color: #001a33 !important;
+            color: #00d9ff !important;
+            border: 2px solid #00d9ff !important;
             border-radius: 12px !important;
             font-weight: 600 !important;
             letter-spacing: 2px !important;
@@ -122,7 +128,6 @@ def inject_modern_design():
             color: #ffffff !important;
         }
 
-        /* --- CHAMPS DE SAISIE --- */
         .stTextInput input {
             background-color: #ffffff !important; 
             border: 1px solid #00d9ff !important;
@@ -132,17 +137,14 @@ def inject_modern_design():
             padding: 12px !important;
         }
 
-        /* Labels */
         label {
             color: #00d9ff !important;
             font-weight: 400 !important;
             letter-spacing: 1px;
             text-transform: uppercase;
             font-size: 0.85rem !important;
-            margin-bottom: 8px !important;
         }
 
-        /* Boîte IA */
         .ai-box {
             background-color: rgba(0, 217, 255, 0.05);
             border-left: 3px solid #00d9ff;
@@ -163,13 +165,15 @@ def show_login():
     with st.form("login"):
         st.text_input("EMAIL", key="login_email")
         st.text_input("MOT DE PASSE", type="password", key="login_pw")
-        # Le bouton "S'IMMERGER" aura maintenant le même style que "CRÉER UN NOUVEAU PROFIL"
         if st.form_submit_button("S'IMMERGER"):
             u = fetch_user_by_email(st.session_state.login_email)
             if u and verify_password(st.session_state.login_pw, u['fields'].get('MotDePasse', '')):
                 st.session_state.user = u
+                send_slack_message(f"🔓 Connexion réussie : {st.session_state.login_email}")
                 st.rerun()
-            else: st.error("Coordonnées d'accès invalides")
+            else: 
+                st.error("Coordonnées d'accès invalides")
+                send_slack_message(f"⚠️ Échec de connexion : {st.session_state.login_email}")
     
     st.markdown("<br>", unsafe_allow_html=True)
     if st.button("CRÉER UN NOUVEAU PROFIL"):
@@ -213,11 +217,11 @@ def show_profile_settings():
         nom = col2.text_input("Nom", value=f.get("Nom", ""))
         tel = st.text_input("Contact Téléphonique", value=f.get("Telephone", ""))
         
-        # Ce bouton est aussi mis à jour
         if st.form_submit_button("METTRE À JOUR LES DONNÉES"):
             up = update_user_profile(u['id'], nom, prenom, tel)
             if up:
                 st.session_state.user['fields'].update(up['fields'])
+                send_slack_message(f"📝 Profil mis à jour : {f.get('Email')}")
                 st.toast("Base de données mise à jour", icon="🛰️")
                 time.sleep(1)
                 st.rerun()
