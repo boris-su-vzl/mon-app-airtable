@@ -80,10 +80,12 @@ def send_slack_notification(message):
 # --- Gestion de l'État ---
 if 'user' not in st.session_state: st.session_state.user = None
 if 'auth_mode' not in st.session_state: st.session_state.auth_mode = 'login'
+if 'page' not in st.session_state: st.session_state.page = 'home' # Gère la navigation
 
 def logout():
     st.session_state.user = None
     st.session_state.auth_mode = 'login'
+    st.session_state.page = 'home'
     st.rerun()
 
 # --- Design & CSS ---
@@ -92,8 +94,9 @@ def inject_custom_css():
         <style>
         .stApp { background-color: #f8fafc; }
         div[data-testid="stForm"] { background-color: white; padding: 2rem; border-radius: 1rem; border: 1px solid #e2e8f0; }
-        h1, h2, h3 { color: #1e293b; font-family: 'Segoe UI', sans-serif; }
-        .welcome-card { background: white; padding: 3rem; border-radius: 1.5rem; text-align: center; border: 1px solid #e2e8f0; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+        .welcome-card { background: white; padding: 3rem; border-radius: 1.5rem; text-align: center; border: 1px solid #e2e8f0; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); margin-top: 20px; }
+        /* Style pour masquer la sidebar par défaut si elle s'ouvre */
+        [data-testid="stSidebar"] { display: none; }
         </style>
     """, unsafe_allow_html=True)
 
@@ -132,28 +135,42 @@ def show_register():
         st.session_state.auth_mode = 'login'
         st.rerun()
 
-# --- NOUVELLE PAGE : ACCUEIL ---
+# --- ACCUEIL SANS SIDEBAR ---
 def show_welcome():
     fields = st.session_state.user['fields']
+    
+    # Header personnalisé avec icône de paramètres à droite
+    head_col1, head_col2 = st.columns([6, 1])
+    with head_col2:
+        if st.button("⚙️", help="Paramètres du profil"):
+            st.session_state.page = 'settings'
+            st.rerun()
+    
     st.markdown(f"""
         <div class="welcome-card">
             <h1 style='font-size: 3rem; margin-bottom: 0;'>👋 Bonjour, {fields.get('Prenom')} !</h1>
-            <p style='color: #64748b; font-size: 1.2rem;'>Ravi de vous revoir dans votre espace membre.</p>
+            <p style='color: #64748b; font-size: 1.2rem;'>Bienvenue dans votre espace sécurisé.</p>
         </div>
     """, unsafe_allow_html=True)
     
     st.markdown("<br>", unsafe_allow_html=True)
-    
-    # Un petit message d'accueil de l'IA dès l'arrivée
-    with st.expander("✨ Un petit mot pour vous", expanded=True):
+    with st.expander("✨ Un petit mot de l'IA pour vous", expanded=True):
         st.write(get_name_compliment(fields.get('Prenom')))
 
-# --- PAGE PROFIL (MODIFIÉE) ---
+# --- PAGE PARAMÈTRES ---
 def show_profile_settings():
     user = st.session_state.user
     fields = user['fields']
     
-    st.markdown("## ⚙️ Paramètres du profil")
+    # Header pour revenir en arrière
+    head_col1, head_col2 = st.columns([6, 1])
+    with head_col1:
+        st.markdown("## ⚙️ Paramètres")
+    with head_col2:
+        if st.button("🏠", help="Retour à l'accueil"):
+            st.session_state.page = 'home'
+            st.rerun()
+
     with st.form("profile_form"):
         col1, col2 = st.columns(2)
         prenom = col1.text_input("Prénom", value=fields.get("Prenom", ""))
@@ -161,7 +178,7 @@ def show_profile_settings():
         telephone = st.text_input("Téléphone", value=fields.get("Telephone", ""))
         st.text_input("Email", value=fields.get("Email", ""), disabled=True)
         
-        if st.form_submit_button("💾 Enregistrer les modifications", type="primary", use_container_width=True):
+        if st.form_submit_button("💾 Enregistrer", type="primary", use_container_width=True):
             with st.spinner("Mise à jour..."):
                 updated = update_user_profile(user['id'], nom, prenom, telephone)
                 if updated:
@@ -171,6 +188,10 @@ def show_profile_settings():
                     st.success("Profil mis à jour !")
                     time.sleep(1)
                     st.rerun()
+    
+    st.markdown("---")
+    if st.button("🚪 Déconnexion", type="secondary", use_container_width=True):
+        logout()
 
 # --- Main App Logic ---
 def main():
@@ -182,16 +203,8 @@ def main():
             if st.session_state.auth_mode == 'login': show_login()
             else: show_register()
     else:
-        # NAVIGATION SIDEBAR (Roue crantée incluse)
-        with st.sidebar:
-            st.markdown(f"### Menu")
-            # Utilisation de boutons pour naviguer
-            page = st.radio("Aller vers :", ["🏠 Accueil", "⚙️ Mon Profil"], label_visibility="collapsed")
-            st.markdown("---")
-            if st.button("🚪 Déconnexion", use_container_width=True):
-                logout()
-
-        if page == "🏠 Accueil":
+        # Navigation par état
+        if st.session_state.page == 'home':
             show_welcome()
         else:
             show_profile_settings()
