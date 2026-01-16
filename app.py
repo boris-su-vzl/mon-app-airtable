@@ -44,7 +44,7 @@ def get_name_compliment(prenom):
     try:
         client = genai.Client(api_key=GOOGLE_API_KEY)
         response = client.models.generate_content(
-            model="gemini-3-flash-preview",
+            model="gemini-1.5-flash",
             contents=f"Tu es un expert en étymologie jovial. Donne un avis court (une seule phrase maximum), élégant et flatteur sur le prénom '{prenom}'. Mentionne pourquoi il est joli ou intéressant (sonorité, origine, signification). Ne mets pas de guillemets."
         )
         return response.text
