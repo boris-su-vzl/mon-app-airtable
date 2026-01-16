@@ -37,29 +37,9 @@ HEADERS = {
 # --- Services IA (Gemini) ---
 
 def get_name_compliment(prenom):
-    if not GOOGLE_API_KEY:
-        return "Clé API manquante."
-    
-    try:
-        genai.configure(api_key=GOOGLE_API_KEY)
-        
-        # On teste avec le nom technique exact et stable
-        # Si 'gemini-1.5-flash' échoue, on essaie 'models/gemini-1.5-flash'
-        model = genai.GenerativeModel('models/gemini-1.5-flash')
-        
-        response = model.generate_content(
-            f"Donne un avis très court et flatteur sur le prénom '{prenom}'. Une seule phrase."
-        )
-        return response.text.strip()
-    except Exception as e:
-        # Si l'erreur 404 persiste, on va essayer le modèle 'gemini-pro' 
-        # qui est le nom universel de repli
-        try:
-            model = genai.GenerativeModel('gemini-pro')
-            response = model.generate_content(f"Dit du bien du prénom {prenom}")
-            return response.text.strip()
-        except:
-            return f"Erreur technique persistante : {e}"
+    genai.configure(api_key=GOOGLE_API_KEY)
+    models = [m.name for m in genai.list_models()]
+    return f"Modèles dispos : {models}"
     
         
 
