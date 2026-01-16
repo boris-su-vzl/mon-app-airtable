@@ -38,22 +38,25 @@ HEADERS = {
 
 def get_name_compliment(prenom):
     if not GOOGLE_API_KEY:
-        return "Clé API manquante."
+        return "Erreur : Clé API manquante dans les Secrets."
     
     try:
-        # Configuration stable
         genai.configure(api_key=GOOGLE_API_KEY)
         model = genai.GenerativeModel('gemini-1.5-flash')
         
-        # Appel direct sans passer par v1beta
         response = model.generate_content(
-            f"Tu es un expert en étymologie jovial. Donne un avis court (une phrase), élégant et flatteur sur le prénom '{prenom}'. Pas de guillemets."
+            f"Donne un avis très court et flatteur sur le prénom '{prenom}'. Une seule phrase sans guillemets."
         )
-        return response.text
+        
+        # On nettoie le texte pour enlever les espaces ou retours à la ligne inutiles
+        result = response.text.strip()
+        return result
+        
     except Exception as e:
-        # Si ça échoue encore, on veut savoir pourquoi sans bloquer l'app
-        print(f"Erreur IA : {e}")
-        return "Un prénom vraiment remarquable !"
+        # On affiche l'erreur réelle dans les logs pour comprendre
+        print(f"DEBUG IA ERROR: {e}")
+        return f"Erreur technique : {e}
+        
 
 # --- Services Airtable & Sécurité ---
 
