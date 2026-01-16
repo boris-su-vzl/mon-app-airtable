@@ -4,9 +4,9 @@ import bcrypt
 import time
 import google.generativeai as genai
 
-# --- Configuration de la page ---
+# --- Configuration ---
 st.set_page_config(
-    page_title="Portail Membre",
+    page_title="Espace Membre",
     page_icon="✨",
     layout="centered",
     initial_sidebar_state="collapsed"
@@ -20,194 +20,195 @@ try:
     SLACK_WEBHOOK_URL = st.secrets.get("SLACK_WEBHOOK_URL")
     GOOGLE_API_KEY = st.secrets.get("GOOGLE_API_KEY")
 except Exception as e:
-    st.error(f"🚨 Erreur de configuration : {e}")
+    st.error(f"Configuration manquante : {e}")
     st.stop()
 
 BASE_URL = f"https://api.airtable.com/v0/{AIRTABLE_BASE_ID}/{AIRTABLE_TABLE_NAME}"
-HEADERS = {
-    "Authorization": f"Bearer {AIRTABLE_TOKEN}",
-    "Content-Type": "application/json"
-}
+HEADERS = {"Authorization": f"Bearer {AIRTABLE_TOKEN}", "Content-Type": "application/json"}
 
-# --- Services IA (Gemini) ---
+# --- Services IA & Airtable ---
 def get_name_compliment(prenom):
-    if not GOOGLE_API_KEY: return "Clé API manquante."
+    if not GOOGLE_API_KEY: return "Un prénom magnifique."
     try:
         genai.configure(api_key=GOOGLE_API_KEY)
         model = genai.GenerativeModel('models/gemini-2.5-flash')
-        response = model.generate_content(
-            f"Tu es un expert en étymologie jovial. Donne un avis court (une seule phrase), élégant et flatteur sur le prénom '{prenom}'. Pas de guillemets."
-        )
+        response = model.generate_content(f"Donne un avis court, flatteur et moderne sur le prénom '{prenom}'. Une phrase.")
         return response.text.strip()
-    except Exception as e:
-        return f"Note : {e}"
+    except: return "Une personnalité rayonnante !"
 
-# --- Services Airtable ---
 def fetch_user_by_email(email):
-    formula = f"{{Email}} = '{email}'"
-    params = {"filterByFormula": formula}
-    try:
-        response = requests.get(BASE_URL, headers=HEADERS, params=params)
-        data = response.json()
-        return data["records"][0] if "records" in data and data["records"] else None
-    except: return None
-
-def create_user(email, password, nom, prenom, telephone):
-    hashed = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-    data = {"fields": {"Email": email, "MotDePasse": hashed, "Nom": nom, "Prenom": prenom, "Telephone": telephone}}
-    try:
-        response = requests.post(BASE_URL, headers=HEADERS, json=data)
-        return response.json()
-    except: return None
+    params = {"filterByFormula": f"{{Email}} = '{email}'"}
+    r = requests.get(BASE_URL, headers=HEADERS, params=params).json()
+    return r["records"][0] if "records" in r and r["records"] else None
 
 def update_user_profile(record_id, nom, prenom, telephone):
     url = f"{BASE_URL}/{record_id}"
     data = {"fields": {"Nom": nom, "Prenom": prenom, "Telephone": telephone}}
-    try:
-        response = requests.patch(url, headers=HEADERS, json=data)
-        return response.json()
-    except: return None
+    return requests.patch(url, headers=HEADERS, json=data).json()
 
-def verify_password(plain_password, hashed_password_str):
-    try: return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password_str.encode('utf-8'))
-    except: return False
+def verify_password(plain, hashed):
+    return bcrypt.checkpw(plain.encode('utf-8'), hashed.encode('utf-8'))
 
-def send_slack_notification(message):
-    if not SLACK_WEBHOOK_URL: return
-    try: requests.post(SLACK_WEBHOOK_URL, json={"text": message})
-    except: pass
-
-# --- Gestion de l'État ---
+# --- État de la Session ---
 if 'user' not in st.session_state: st.session_state.user = None
+if 'page' not in st.session_state: st.session_state.page = 'home'
 if 'auth_mode' not in st.session_state: st.session_state.auth_mode = 'login'
-if 'page' not in st.session_state: st.session_state.page = 'home' # Gère la navigation
 
 def logout():
     st.session_state.user = None
-    st.session_state.auth_mode = 'login'
     st.session_state.page = 'home'
     st.rerun()
 
-# --- Design & CSS ---
-def inject_custom_css():
+# --- DESIGN CUSTOM CSS (FLAT & MODERN) ---
+def inject_modern_design():
     st.markdown("""
         <style>
-        .stApp { background-color: #f8fafc; }
-        div[data-testid="stForm"] { background-color: white; padding: 2rem; border-radius: 1rem; border: 1px solid #e2e8f0; }
-        .welcome-card { background: white; padding: 3rem; border-radius: 1.5rem; text-align: center; border: 1px solid #e2e8f0; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); margin-top: 20px; }
-        /* Style pour masquer la sidebar par défaut si elle s'ouvre */
-        [data-testid="stSidebar"] { display: none; }
+        /* Import Google Font */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
+        
+        html, body, [class*="css"] {
+            font-family: 'Inter', sans-serif;
+            color: #1e293b;
+        }
+
+        .stApp {
+            background-color: #fcfcfd;
+        }
+
+        /* Masquer le menu Streamlit */
+        #MainMenu {visibility: hidden;}
+        header {visibility: hidden;}
+
+        /* Cartes Flat */
+        div[data-testid="stForm"], .welcome-card {
+            background-color: #ffffff;
+            border: 1px solid #f1f5f9;
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Boutons Modernes */
+        div.stButton > button {
+            border-radius: 8px;
+            font-weight: 600;
+            padding: 0.6rem 1.2rem;
+            border: none;
+            transition: all 0.2s ease;
+        }
+        
+        div.stButton > button[kind="primary"] {
+            background-color: #4f46e5;
+            color: white;
+        }
+        
+        div.stButton > button[kind="primary"]:hover {
+            background-color: #4338ca;
+            transform: translateY(-1px);
+        }
+
+        /* Inputs Flat */
+        .stTextInput input {
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+        }
+
+        /* Message d'accueil */
+        .welcome-title {
+            font-size: 32px;
+            font-weight: 600;
+            letter-spacing: -0.5px;
+            color: #0f172a;
+        }
+        
+        .ai-box {
+            background-color: #eff6ff;
+            border-left: 4px solid #3b82f6;
+            padding: 15px;
+            border-radius: 8px;
+            font-style: italic;
+        }
         </style>
     """, unsafe_allow_html=True)
 
 # --- Interfaces ---
 
 def show_login():
-    st.markdown("<h2 style='text-align: center;'>🔐 Connexion</h2>", unsafe_allow_html=True)
-    with st.form("login_form"):
-        email = st.text_input("Email")
-        password = st.text_input("Mot de passe", type="password")
+    st.markdown("<div style='text-align: center; margin-bottom: 2rem;'><h1 class='welcome-title'>Connexion</h1></div>", unsafe_allow_html=True)
+    with st.form("login"):
+        e = st.text_input("Email")
+        p = st.text_input("Mot de passe", type="password")
         if st.form_submit_button("Se connecter", type="primary", use_container_width=True):
-            user_record = fetch_user_by_email(email)
-            if user_record and verify_password(password, user_record['fields'].get('MotDePasse', '')):
-                st.session_state.user = user_record
+            u = fetch_user_by_email(e)
+            if u and verify_password(p, u['fields'].get('MotDePasse', '')):
+                st.session_state.user = u
                 st.rerun()
-            else: st.error("Identifiants incorrects.")
-    if st.button("Créer un compte"): 
+            else: st.error("Identifiants incorrects")
+    if st.button("Pas encore de compte ? S'inscrire"):
         st.session_state.auth_mode = 'register'
         st.rerun()
 
-def show_register():
-    st.markdown("<h2 style='text-align: center;'>✨ Inscription</h2>", unsafe_allow_html=True)
-    with st.form("reg_form"):
-        p, n = st.columns(2)
-        prenom = p.text_input("Prénom")
-        nom = n.text_input("Nom")
-        email = st.text_input("Email")
-        tel = st.text_input("Téléphone")
-        pw = st.text_input("Mot de passe", type="password")
-        if st.form_submit_button("S'inscrire", type="primary"):
-            new_u = create_user(email, pw, nom, prenom, tel)
-            if new_u:
-                st.session_state.user = new_u
-                st.rerun()
-    if st.button("Déjà un compte ?"): 
-        st.session_state.auth_mode = 'login'
-        st.rerun()
-
-# --- ACCUEIL SANS SIDEBAR ---
 def show_welcome():
     fields = st.session_state.user['fields']
     
-    # Header personnalisé avec icône de paramètres à droite
-    head_col1, head_col2 = st.columns([6, 1])
-    with head_col2:
-        if st.button("⚙️", help="Paramètres du profil"):
+    # Navigation minimaliste
+    c1, c2 = st.columns([8, 1])
+    with c2:
+        if st.button("⚙️", help="Paramètres", key="gear"):
             st.session_state.page = 'settings'
             st.rerun()
-    
+
     st.markdown(f"""
         <div class="welcome-card">
-            <h1 style='font-size: 3rem; margin-bottom: 0;'>👋 Bonjour, {fields.get('Prenom')} !</h1>
-            <p style='color: #64748b; font-size: 1.2rem;'>Bienvenue dans votre espace sécurisé.</p>
+            <p style='color: #6366f1; font-weight: 600; margin-bottom: 0;'>TABLEAU DE BORD</p>
+            <h1 class='welcome-title'>Bonjour, {fields.get('Prenom')}</h1>
+            <p style='color: #64748b;'>Heureux de vous revoir parmi nous.</p>
+            <div class='ai-box'>
+                ✨ {get_name_compliment(fields.get('Prenom'))}
+            </div>
         </div>
     """, unsafe_allow_html=True)
-    
-    st.markdown("<br>", unsafe_allow_html=True)
-    with st.expander("✨ Un petit mot de l'IA pour vous", expanded=True):
-        st.write(get_name_compliment(fields.get('Prenom')))
 
-# --- PAGE PARAMÈTRES ---
 def show_profile_settings():
-    user = st.session_state.user
-    fields = user['fields']
+    u = st.session_state.user
+    f = u['fields']
     
-    # Header pour revenir en arrière
-    head_col1, head_col2 = st.columns([6, 1])
-    with head_col1:
-        st.markdown("## ⚙️ Paramètres")
-    with head_col2:
-        if st.button("🏠", help="Retour à l'accueil"):
+    c1, c2 = st.columns([8, 1])
+    with c1: st.markdown("<h1 class='welcome-title'>Paramètres</h1>", unsafe_allow_html=True)
+    with c2: 
+        if st.button("🏠", key="home_back"):
             st.session_state.page = 'home'
             st.rerun()
 
-    with st.form("profile_form"):
+    with st.form("profile"):
         col1, col2 = st.columns(2)
-        prenom = col1.text_input("Prénom", value=fields.get("Prenom", ""))
-        nom = col2.text_input("Nom", value=fields.get("Nom", ""))
-        telephone = st.text_input("Téléphone", value=fields.get("Telephone", ""))
-        st.text_input("Email", value=fields.get("Email", ""), disabled=True)
+        prenom = col1.text_input("Prénom", value=f.get("Prenom", ""))
+        nom = col2.text_input("Nom", value=f.get("Nom", ""))
+        tel = st.text_input("Téléphone", value=f.get("Telephone", ""))
         
-        if st.form_submit_button("💾 Enregistrer", type="primary", use_container_width=True):
-            with st.spinner("Mise à jour..."):
-                updated = update_user_profile(user['id'], nom, prenom, telephone)
-                if updated:
-                    st.session_state.user['fields'].update(updated['fields'])
-                    ai_comment = get_name_compliment(prenom)
-                    send_slack_notification(f"🔔 Mise à jour : {prenom} {nom}\n🤖 IA : {ai_comment}")
-                    st.success("Profil mis à jour !")
-                    time.sleep(1)
-                    st.rerun()
+        if st.form_submit_button("Enregistrer", type="primary", use_container_width=True):
+            up = update_user_profile(u['id'], nom, prenom, tel)
+            if up:
+                st.session_state.user['fields'].update(up['fields'])
+                st.toast("Profil mis à jour", icon="✅")
+                time.sleep(1)
+                st.rerun()
     
-    st.markdown("---")
-    if st.button("🚪 Déconnexion", type="secondary", use_container_width=True):
-        logout()
+    st.markdown("<br>", unsafe_allow_html=True)
+    if st.button("Se déconnecter", use_container_width=True): logout()
 
-# --- Main App Logic ---
+# --- Main Logic ---
 def main():
-    inject_custom_css()
-    
+    inject_modern_design()
     if not st.session_state.user:
-        col_l, col_center, col_r = st.columns([1, 2, 1])
-        with col_center:
+        _, center, _ = st.columns([1, 4, 1])
+        with center:
             if st.session_state.auth_mode == 'login': show_login()
-            else: show_register()
+            else: st.info("Page d'inscription simplifiée...") # À compléter selon besoin
     else:
-        # Navigation par état
-        if st.session_state.page == 'home':
-            show_welcome()
-        else:
-            show_profile_settings()
+        if st.session_state.page == 'home': show_welcome()
+        else: show_profile_settings()
 
 if __name__ == "__main__":
     main()
