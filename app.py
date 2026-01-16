@@ -16,6 +16,7 @@ try:
     AIRTABLE_TOKEN = st.secrets["AIRTABLE_TOKEN"]
     AIRTABLE_BASE_ID = st.secrets["AIRTABLE_BASE_ID"]
     AIRTABLE_TABLE_NAME = st.secrets.get("AIRTABLE_TABLE_NAME", "Utilisateurs")
+    SLACK_WEBHOOK_URL = st.secrets.get("SLACK_WEBHOOK_URL")
 except FileNotFoundError:
     st.error("🚨 Erreur de configuration : Les secrets (st.secrets) ne sont pas définis.")
     st.stop()
@@ -99,6 +100,17 @@ def verify_password(plain_password, hashed_password_str):
         return bcrypt.checkpw(password_bytes, hashed_bytes)
     except Exception:
         return False
+
+def send_slack_notification(message):
+    """Envoie une notification à Slack via Webhook."""
+    if not SLACK_WEBHOOK_URL:
+        return
+
+    try:
+        payload = {"text": message}
+        requests.post(SLACK_WEBHOOK_URL, json=payload)
+    except Exception as e:
+        print(f"Erreur lors de l'envoi de la notification Slack: {e}")
 
 # --- Gestion de l'État (Session) ---
 
@@ -320,6 +332,9 @@ def show_profile():
                         merged_user['fields'].update(updated_record['fields'])
                         st.session_state.user = merged_user
                         
+                        # --- Notification Slack ---
+                        send_slack_notification(f"🔔 Mise à jour : {prenom} {nom} vient de modifier ses informations")
+
                         st.toast("Profil mis à jour !", icon="✅")
                         time.sleep(1)
                         st.rerun()
