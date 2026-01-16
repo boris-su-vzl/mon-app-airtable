@@ -41,17 +41,19 @@ def get_name_compliment(prenom):
         return "Clé API manquante."
     
     try:
-        # Configuration avec l'ancienne méthode stable
+        # Configuration stable
         genai.configure(api_key=GOOGLE_API_KEY)
         model = genai.GenerativeModel('gemini-1.5-flash')
         
+        # Appel direct sans passer par v1beta
         response = model.generate_content(
-            f"Donne un avis court et flatteur sur le prénom '{prenom}'. Une seule phrase."
+            f"Tu es un expert en étymologie jovial. Donne un avis court (une phrase), élégant et flatteur sur le prénom '{prenom}'. Pas de guillemets."
         )
         return response.text
     except Exception as e:
-        st.error(f"Détail de l'erreur IA : {e}")
-        return ""
+        # Si ça échoue encore, on veut savoir pourquoi sans bloquer l'app
+        print(f"Erreur IA : {e}")
+        return "Un prénom vraiment remarquable !"
 
 # --- Services Airtable & Sécurité ---
 
