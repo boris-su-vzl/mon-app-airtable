@@ -2,6 +2,7 @@ import streamlit as st
 import requests
 import bcrypt
 import time
+from google import genai
 
 # --- Configuration de la page ---
 st.set_page_config(
@@ -17,6 +18,9 @@ try:
     AIRTABLE_BASE_ID = st.secrets["AIRTABLE_BASE_ID"]
     AIRTABLE_TABLE_NAME = st.secrets.get("AIRTABLE_TABLE_NAME", "Utilisateurs")
     SLACK_WEBHOOK_URL = st.secrets.get("SLACK_WEBHOOK_URL")
+    # La clé API Google est optionnelle pour ne pas bloquer l'app si elle manque,
+    # mais l'IA ne fonctionnera pas sans elle.
+    GOOGLE_API_KEY = st.secrets.get("GOOGLE_API_KEY")
 except FileNotFoundError:
     st.error("🚨 Erreur de configuration : Les secrets (st.secrets) ne sont pas définis.")
     st.stop()
@@ -29,6 +33,24 @@ HEADERS = {
     "Authorization": f"Bearer {AIRTABLE_TOKEN}",
     "Content-Type": "application/json"
 }
+
+# --- Services IA (Gemini) ---
+
+def get_name_compliment(prenom):
+    """Génère un compliment sur le prénom via Gemini."""
+    if not GOOGLE_API_KEY:
+        return ""
+    
+    try:
+        client = genai.Client(api_key=GOOGLE_API_KEY)
+        response = client.models.generate_content(
+            model="gemini-3-flash-preview",
+            contents=f"Tu es un expert en étymologie jovial. Donne un avis court (une seule phrase maximum), élégant et flatteur sur le prénom '{prenom}'. Mentionne pourquoi il est joli ou intéressant (sonorité, origine, signification). Ne mets pas de guillemets."
+        )
+        return response.text
+    except Exception as e:
+        print(f"Erreur IA : {e}")
+        return ""
 
 # --- Services Airtable & Sécurité ---
 
@@ -332,8 +354,15 @@ def show_profile():
                         merged_user['fields'].update(updated_record['fields'])
                         st.session_state.user = merged_user
                         
-                        # --- Notification Slack ---
-                        send_slack_notification(f"🔔 Mise à jour : {prenom} {nom} vient de modifier ses informations")
+                        # --- Notification Slack avec IA ---
+                        try:
+                            ai_comment = get_name_compliment(prenom)
+                            slack_message = f"🔔 Mise à jour : {prenom} {nom} vient de modifier ses informations.\n\n🤖 *L'avis de l'IA :* {ai_comment}"
+                        except Exception:
+                            # Fallback si l'IA échoue
+                            slack_message = f"🔔 Mise à jour : {prenom} {nom} vient de modifier ses informations."
+                            
+                        send_slack_notification(slack_message)
 
                         st.toast("Profil mis à jour !", icon="✅")
                         time.sleep(1)
