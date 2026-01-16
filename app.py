@@ -2,7 +2,7 @@ import streamlit as st
 import requests
 import bcrypt
 import time
-from google import genai
+import google.generativeai as genai
 
 # --- Configuration de la page ---
 st.set_page_config(
@@ -38,19 +38,18 @@ HEADERS = {
 
 def get_name_compliment(prenom):
     if not GOOGLE_API_KEY:
-        st.error("Clé API Google manquante dans les secrets !")
-        return ""
+        return "Clé API manquante."
     
     try:
-        client = genai.Client(api_key=GOOGLE_API_KEY)
-        # On utilise le nom de modèle le plus stable actuellement
-        response = client.models.generate_content(
-            model="gemini-1.5-flash", 
-            contents=f"Donne un avis court et flatteur sur le prénom '{prenom}'. Une seule phrase."
+        # Configuration avec l'ancienne méthode stable
+        genai.configure(api_key=GOOGLE_API_KEY)
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        
+        response = model.generate_content(
+            f"Donne un avis court et flatteur sur le prénom '{prenom}'. Une seule phrase."
         )
         return response.text
     except Exception as e:
-        # Ceci va nous dire EXACTEMENT pourquoi ça ne marche pas (ex: Quota, Clé invalide...)
         st.error(f"Détail de l'erreur IA : {e}")
         return ""
 
